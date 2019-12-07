@@ -11,7 +11,7 @@ namespace MyIntegrationTests.Loggers
 
         public XunitLogger(ITestOutputHelper testOutputHelper, string categoryName)
         {
-            _testOutputHelper = testOutputHelper;
+            _testOutputHelper = testOutputHelper ?? throw new ArgumentNullException(nameof(ITestOutputHelper));
             _categoryName = categoryName;
         }
 
@@ -26,6 +26,7 @@ namespace MyIntegrationTests.Loggers
             _testOutputHelper.WriteLine($"{_categoryName} [{eventId}] {formatter(state, exception)}");
             if (exception != null)
                 _testOutputHelper.WriteLine(exception.ToString());
+
         }
 
         private class NoopDisposable : IDisposable

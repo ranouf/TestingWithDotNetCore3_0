@@ -15,15 +15,15 @@ namespace MyIntegrationTests.Controllers
     [Collection(Constants.TEST_COLLECTION)]
     public class WeatherForecastController_Tests : IClassFixture<TestServerFixture>
     {
+        public TestServerFixture TestServerFixture { get; private set; }
         public HttpClient Client { get; private set; }
-        public ITestOutputHelper Output { get; private set; }
+        public ITestOutputHelper Output { get { return TestServerFixture.Output; } }
 
         public WeatherForecastController_Tests(TestServerFixture testServerFixture, ITestOutputHelper output)
         {
-            Client = testServerFixture.Client;
-            Output = output;
+            TestServerFixture = testServerFixture.SetOutPut(output);
+            Client = testServerFixture.CreateClient();
         }
-
 
         [Fact]
         public async Task Should_Get_WeatherForecast()
@@ -35,7 +35,6 @@ namespace MyIntegrationTests.Controllers
 
             var weatherForecasts = await ConvertToAsync<IEnumerable<WeatherForecast>>(response);
             Assert.True(weatherForecasts.Any());
-
         }
 
         #region Private

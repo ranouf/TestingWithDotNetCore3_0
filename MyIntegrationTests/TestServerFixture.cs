@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MyAPI;
 using MyIntegrationTests.Loggers;
-using System;
 using System.Net.Http;
 using Xunit.Abstractions;
 
@@ -13,66 +13,42 @@ namespace MyIntegrationTests
 {
     public class TestServerFixture : WebApplicationFactory<TestStartup>
     {
-        private IHost _host;
         public HttpClient Client { get; }
-        public ITestOutputHelper Output { get; }
+        public ITestOutputHelper Output { get; set; }
 
-        public TestServerFixture(ITestOutputHelper output)
+        protected override IHostBuilder CreateHostBuilder()
         {
-            Output = output;
-            Client = Server.CreateClient();
-        }
-
-        // never called but this is where i was previously building up the server
-        //
-        protected override TestServer CreateServer(IWebHostBuilder builder)
-        {
-            return base.CreateServer(builder);
-        }
-
-        protected override IHost CreateHost(IHostBuilder builder)
-        {
-            _host = builder.Build();
-
-            using (var scope = _host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                InitializeDataBase(services, Output);
-            }
-
-            _host.Start();
-            return _host;
-        }
-
-        protected override IHostBuilder CreateHostBuilder() =>
-            Host.CreateDefaultBuilder()
-                .ConfigureLogging((hostingContext, builder) =>
+            var builder = Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
                 {
-                    builder.Services.AddSingleton<ILoggerProvider>(new XunitLoggerProvider(Output));
+                    logging.ClearProviders();
+                    logging.AddXunit(Output);
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseTestServer();
+                    webBuilder
+                        .UseStartup<TestStartup>()
+                        .ConfigureTestServices((services) =>
+                        {
+                            services
+                                .AddControllers()
+                                .AddApplicationPart(typeof(Startup).Assembly);
+                        });
                 });
 
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            builder.UseStartup<TestStartup>();
+            return builder;
         }
 
-        private void InitializeDataBase(IServiceProvider services, ITestOutputHelper output)
+        public TestServerFixture SetOutPut(ITestOutputHelper output)
         {
-            try
-            {
-                output.WriteLine("Starting the database initialization.");
-                //here is where is feed the Test DB
-                output.WriteLine("The database initialization has been done.");
-            }
-            catch (Exception ex)
-            {
-                output.WriteLine("An error occurred while initialization the database.");
-                Console.WriteLine(ex.Message);
-            }
+            Output = output;
+            return this;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            Output = null;
         }
     }
 }
