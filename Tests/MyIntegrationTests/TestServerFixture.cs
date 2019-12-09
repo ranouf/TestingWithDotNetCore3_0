@@ -6,18 +6,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyAPI;
 using MyIntegrationTests.Loggers;
+using System.IO;
 using System.Net.Http;
 using Xunit.Abstractions;
 
 namespace MyIntegrationTests
 {
-    public class TestServerFixture : WebApplicationFactory<TestStartup>
+    public class TestServerFixture : WebApplicationFactory<Startup>
     {
         public HttpClient Client { get; }
         public ITestOutputHelper Output { get; set; }
 
         protected override IHostBuilder CreateHostBuilder()
         {
+            var currentDirectory = Directory.GetCurrentDirectory();
+
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureLogging(logging =>
                 {
@@ -27,7 +30,6 @@ namespace MyIntegrationTests
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder
-                        .UseStartup<TestStartup>()
                         .ConfigureTestServices((services) =>
                         {
                             services
@@ -37,6 +39,12 @@ namespace MyIntegrationTests
                 });
 
             return builder;
+        }
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseStartup<TestStartup>();
+
+            base.ConfigureWebHost(builder);
         }
 
         public TestServerFixture SetOutPut(ITestOutputHelper output)

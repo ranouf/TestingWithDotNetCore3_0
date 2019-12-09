@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MyAPI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,17 +15,22 @@ namespace MyAPI.Controllers
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
-
+        private readonly IMyService _myService;
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(
+            IMyService myService,
+            ILogger<WeatherForecastController> logger
+        )
         {
+            _myService = myService ?? throw new ArgumentNullException(nameof(IMyService));
             _logger = logger;
         }
 
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
+            _logger.LogInformation($"Is MyService set: {_myService.IsSet()}");
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

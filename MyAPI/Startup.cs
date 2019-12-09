@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MyAPI.Services;
 
 namespace MyAPI
 {
@@ -19,6 +20,7 @@ namespace MyAPI
         public void ConfigureServices(IServiceCollection services)
         {
             SetUpDataBase(services);
+            services.AddSingleton<IMyService, MyService>();
             services.AddControllers();
         }
 
