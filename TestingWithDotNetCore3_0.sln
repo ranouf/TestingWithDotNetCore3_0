@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAPI", "MyAPI\MyAPI.csproj", "{1C10D6CA-8275-4C62-A619-E17F1C3A19B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyAPI", "MyAPI\MyAPI.csproj", "{1C10D6CA-8275-4C62-A619-E17F1C3A19B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyIntegrationTests", "MyIntegrationTests\MyIntegrationTests.csproj", "{E2790DC4-2293-44B4-BF7A-9BD8CFB1AAD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyIntegrationTests", "Tests\MyIntegrationTests\MyIntegrationTests.csproj", "{E2790DC4-2293-44B4-BF7A-9BD8CFB1AAD3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A71B248C-B764-4DF7-840F-F845ACB7A18E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E2790DC4-2293-44B4-BF7A-9BD8CFB1AAD3} = {A71B248C-B764-4DF7-840F-F845ACB7A18E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B61BBF9-BB44-4359-B39A-D7B882DED57D}
