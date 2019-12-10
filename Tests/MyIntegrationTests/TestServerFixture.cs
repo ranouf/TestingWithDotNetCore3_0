@@ -1,100 +1,199 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyAPI;
-using MyAPI.Modules;
 using MyAPI.Services;
 using MyIntegrationTests.Loggers;
 using System;
-using System.IO;
 using System.Net.Http;
 using Xunit.Abstractions;
 
 namespace MyIntegrationTests
 {
-    public class TestServerFixture : WebApplicationFactory<Startup>
+    public class TestServerFixture : IDisposable
     {
-        private HttpClient _client;
-        public HttpClient Client
+        public IHost Host { get; }
+        public TestServer Server { get; }
+        public HttpClient Client { get; }
+        public ITestOutputHelper Output { get; }
+
+        public TestServerFixture()
         {
-            get
-            {
-                if (_client == null)
-                {
-                    _client = CreateClient();
-                }
-                return _client;
-            }
+
         }
-        public ITestOutputHelper Output { get; set; }
 
-        protected override IHostBuilder CreateHostBuilder()
+        public TestServerFixture(ITestOutputHelper output)
         {
-            var currentDirectory = Directory.GetCurrentDirectory();
+            Output = output;
 
-            var builder = Host.CreateDefaultBuilder()
+            var hostBuilder = new HostBuilder()
+                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureLogging(logging =>
                 {
                     logging.ClearProviders();
                     logging.AddXunit(Output);
                 })
-                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .ConfigureServices(services =>
+                {
+                    services.AddAutofac();
+                    services.AddSingleton<IMyService, MyService>();
+                })
                 .ConfigureContainer<ContainerBuilder>(builder =>
                 {
-                    builder.RegisterModule<MyAPIModule>();
+                    builder.RegisterType<MyService>().As<IMyService>().InstancePerLifetimeScope();
                 })
-                .ConfigureWebHostDefaults(webBuilder =>
+                .ConfigureWebHost(webHost =>
                 {
-                    webBuilder
-                        .ConfigureTestServices((services) =>
+                    // Add TestServer
+                    webHost
+                        .UseStartup<TestStartup>()
+                        .UseTestServer()
+                        .ConfigureServices(services =>
                         {
+                            services.AddSingleton<IMyService, MyService>();
+                            services.AddAutofac();
                             services
                                 .AddControllers()
-                                .AddApplicationPart(typeof(Startup).Assembly);
+                                .AddApplicationPart(typeof(TestStartup).Assembly);
+                        })
+                        .ConfigureTestServices(services =>
+                        {
+                            services.AddSingleton<IMyService, MyService>();
+                            services.AddAutofac();
+                            services
+                                .AddControllers()
+                                .AddApplicationPart(typeof(TestStartup).Assembly);
+                        })
+                        .ConfigureTestContainer<ContainerBuilder>(builder =>
+                        {
+                            builder.RegisterType<MyService>().As<IMyService>().InstancePerLifetimeScope();
                         });
                 });
 
-            return builder;
-        }
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            builder.UseStartup<TestStartup>();
-            base.ConfigureWebHost(builder);
-        }
+            Host = hostBuilder.Start();
+            Server = Host.GetTestServer();
+            Client = Host.GetTestClient();
 
-        protected override void ConfigureClient(HttpClient client)
-        {
-            using (var scope = Services.CreateScope())
+            using (var scope = Host.Services.CreateScope())
             {
+                var services = scope.ServiceProvider;
                 try
                 {
-                    // Here you can get all the injected services including services from Autofac
-                    // for example for seeding your local DB
-                    var myService = scope.ServiceProvider.GetRequiredService<IMyService>();
+                    var myService = services.GetRequiredService<MyService>();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Output.WriteLine(e.Message);
+                    Output.WriteLine("HOST: " + ex.Message);
                 }
             }
-            base.ConfigureClient(client);
+            using (var scope = Server.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var myService = services.GetRequiredService<MyService>();
+                }
+                catch (Exception ex)
+                {
+                    Output.WriteLine("SERVER: " + ex.Message);
+                }
+            }
         }
-
-        public TestServerFixture WithOutPut(ITestOutputHelper output)
+        public void Dispose()
         {
-            Output = output;
-            return this;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            Output = null;
+            Client.Dispose();
+            Server.Dispose();
+            Host.Dispose();
         }
     }
+
+    //public class TestServerFixture : WebApplicationFactory<Startup>
+    //{
+    //    private HttpClient _client;
+    //    public HttpClient Client
+    //    {
+    //        get
+    //        {
+    //            if (_client == null)
+    //            {
+    //                _client = CreateClient();
+    //            }
+    //            return _client;
+    //        }
+    //    }
+    //    public ITestOutputHelper Output { get; set; }
+
+    //    protected override IHostBuilder CreateHostBuilder()
+    //    {
+    //        var currentDirectory = Directory.GetCurrentDirectory();
+
+    //        var builder = Host.CreateDefaultBuilder()
+    //            .ConfigureLogging(logging =>
+    //            {
+    //                logging.ClearProviders();
+    //                logging.AddXunit(Output);
+    //            })
+    //            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+    //            .ConfigureContainer<ContainerBuilder>(builder =>
+    //            {
+    //                builder.RegisterModule<MyAPIModule>();
+    //            })
+    //            .ConfigureWebHost(builder =>
+    //            {
+    //                builder.UseTestServer();
+    //                builder
+    //                    .ConfigureTestServices((services) =>
+    //                    {
+    //                        services
+    //                            .AddControllers()
+    //                            .AddApplicationPart(typeof(Startup).Assembly);
+    //                    });
+    //            });
+
+    //        return builder;
+    //    }
+    //    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    //    {
+    //        builder.UseStartup<TestStartup>();
+    //        base.ConfigureWebHost(builder);
+    //    }
+
+    //    protected override void ConfigureClient(HttpClient client)
+    //    {
+    //        base.ConfigureClient(client);
+    //    }
+
+    //    public TestServerFixture WithOutPut(ITestOutputHelper output)
+    //    {
+    //        Output = output;
+    //        return this;
+    //    }
+    //    public TestServerFixture WithData()
+    //    {
+    //        using (var scope = Server.Services.CreateScope())
+    //        {
+    //            var services = scope.ServiceProvider;
+    //            try
+    //            {
+    //                Output.WriteLine("Starting the database initialization.");
+    //                TestDbInitializer.Seed(services, Output);
+    //                Output.WriteLine("The database initialization has been done.");
+    //            }
+    //            catch (Exception e)
+    //            {
+    //                Output.WriteLine(e.Message);
+    //            }
+    //        }
+    //        return this;
+    //    }
+
+    //    protected override void Dispose(bool disposing)
+    //    {
+    //        base.Dispose(disposing);
+    //        Output = null;
+    //    }
+    //}
 }

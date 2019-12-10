@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using MyAPI.Services;
 using System.Linq;
 using System.Reflection;
 
@@ -13,6 +14,8 @@ namespace MyAPI.Modules
                    .Where(t => t.Name.EndsWith("Service"))
                    .AsImplementedInterfaces()
                    .InstancePerLifetimeScope();
+
+            builder.RegisterType<MyService>().As<IMyService>().InstancePerLifetimeScope();
         }
     }
 }
