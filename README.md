@@ -13,3 +13,5 @@ I now get a new issue when I move the test integration projet in a subfolder whi
 - StackOverflow: https://stackoverflow.com/questions/59253641/net-core-3-0-directorynotfoundexception-with-xunit-integration-test
 
 => **Fix**: https://github.com/ranouf/TestingWithDotNetCore3_0/commit/7ef98f17e557c9d727c547f01ce43eed9e614e59
+
+I added Autofac and I can inject a service on the API project and the Test project.
