@@ -15,7 +15,7 @@ namespace MyIntegrationTests.Data
                 var context = services.GetRequiredService<MyDbContext>();
                 context.Database.EnsureCreated();
 
-                var myService = services.GetRequiredService<MyService>();
+                var myService = services.GetRequiredService<IMyService>();
                 new MyEntitiesDataBuilder(context, myService, output).Seed();
 
                 context.SaveChanges();

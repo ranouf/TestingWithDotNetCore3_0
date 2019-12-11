@@ -35,7 +35,7 @@ namespace MyAPI.Controllers
             return new ObjectResult(_myService.Get(id));
         }
 
-        [HttpPut]
+        [HttpPost]
         public IActionResult Create([FromBody] MyEntity myEntity)
         {
             return new ObjectResult(_myService.Create(myEntity.Name));

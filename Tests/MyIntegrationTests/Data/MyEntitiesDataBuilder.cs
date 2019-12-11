@@ -9,9 +9,9 @@ namespace MyIntegrationTests.Data
     {
         private readonly MyDbContext _context;
         private readonly ITestOutputHelper _output;
-        private readonly MyService _myService;
+        private readonly IMyService _myService;
 
-        public MyEntitiesDataBuilder(MyDbContext context, MyService myService, ITestOutputHelper output)
+        public MyEntitiesDataBuilder(MyDbContext context, IMyService myService, ITestOutputHelper output)
         {
             _context = context;
             _myService = myService;

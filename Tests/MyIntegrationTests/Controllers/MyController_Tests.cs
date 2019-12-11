@@ -1,5 +1,6 @@
 ﻿using MyAPI.Services.Entities;
 using MyIntegrationTests.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -24,6 +25,7 @@ namespace MyIntegrationTests.Controllers
         [Fact]
         public async Task Should_Get_My_Entities()
         {
+            // Get all
             var response = await TestServerFixture.Client.GetAsync(
                 TestServerFixture.Client.BuildPath(API.My.Url, Output)
             );
@@ -33,16 +35,69 @@ namespace MyIntegrationTests.Controllers
             Assert.True(myEntities.Any());
         }
 
-        //[Fact]
-        //public async Task Should_Update_My_Entity()
-        //{
-        //    var response = await Client.GetAsync(
-        //        BuildPath(API.My.Url)
-        //    );
-        //    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        [Fact]
+        public async Task Should_Create_An_Entity()
+        {
+            // Create entity
+            var dto = new MyEntity() { Name = "New Entity" };
+            var response = await TestServerFixture.Client.PostAsync(
+                TestServerFixture.Client.BuildPath(API.My.Url, Output),
+                dto.ToStringContent()
+            );
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        //    var weatherForecasts = await ConvertToAsync<IEnumerable<WeatherForecast>>(response);
-        //    Assert.True(weatherForecasts.Any());
-        //}
+            var myEntity = await response.ConvertToAsync<MyEntity>(Output);
+            Assert.NotNull(myEntity);
+            Assert.NotEqual(Guid.Empty, myEntity.Id);
+            Assert.Equal("New Entity", myEntity.Name);
+        }
+
+        [Fact]
+        public async Task Should_Update_An_Entity()
+        {
+            // Get all
+            var response = await TestServerFixture.Client.GetAsync(
+                TestServerFixture.Client.BuildPath(API.My.Url, Output)
+            );
+            var myEntities = await response.ConvertToAsync<IEnumerable<MyEntity>>(Output);
+            var myEntity = myEntities.First();
+
+            // Update entity
+            myEntity.Name = "Entity Updated";
+            response = await TestServerFixture.Client.PutAsync(
+                TestServerFixture.Client.BuildPath($"{API.My.Url}/{myEntity.Id}", Output),
+                myEntity.ToStringContent()
+            );
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            myEntity = await response.ConvertToAsync<MyEntity>(Output);
+            Assert.NotNull(myEntity);
+            Assert.Equal("Entity Updated", myEntity.Name);
+        }
+
+        [Fact]
+        public async Task Should_Delete_One_Entity()
+        {
+            // Get all
+            var response = await TestServerFixture.Client.GetAsync(
+                TestServerFixture.Client.BuildPath(API.My.Url, Output)
+            );
+            var myEntities = await response.ConvertToAsync<IEnumerable<MyEntity>>(Output);
+            var myEntitiesCount = myEntities.Count();
+            var myEntity = myEntities.First();
+
+            // Delete an entity
+            response = await TestServerFixture.Client.DeleteAsync(
+                TestServerFixture.Client.BuildPath($"{API.My.Url}/{myEntity.Id}", Output)
+            );
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            // Confirm than one is missing
+            response = await TestServerFixture.Client.GetAsync(
+                TestServerFixture.Client.BuildPath(API.My.Url, Output)
+            );
+            myEntities = await response.ConvertToAsync<IEnumerable<MyEntity>>(Output);
+            Assert.Equal(myEntitiesCount - 1, myEntities.Count());
+        }
     }
 }
