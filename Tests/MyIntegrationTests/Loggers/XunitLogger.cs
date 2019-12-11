@@ -23,9 +23,16 @@ namespace MyIntegrationTests.Loggers
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            _testOutputHelper.WriteLine($"{_categoryName} [{eventId}] {formatter(state, exception)}");
-            if (exception != null)
-                _testOutputHelper.WriteLine(exception.ToString());
+            try
+            {
+                _testOutputHelper.WriteLine($"{_categoryName} [{eventId}] {formatter(state, exception)}");
+                if (exception != null)
+                    _testOutputHelper.WriteLine(exception.ToString());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An error occured during logging", e, logLevel, eventId, state, exception);
+            }
 
         }
 
